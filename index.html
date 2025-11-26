@@ -441,6 +441,11 @@
                 <button id="verifyAccessCode" class="btn">Verify Access Code</button>
                 <div id="accessCodeStatus" class="status hidden"></div>
             </div>
+            
+            <!-- Hidden button to initialize test data -->
+            <div class="card hidden">
+                <button id="initializeTestData" class="btn btn-secondary">Initialize Test Data</button>
+            </div>
         </div>
         
         <footer>
@@ -636,6 +641,29 @@
         const accessCodeInput = document.getElementById('accessCode');
         const verifyAccessCodeBtn = document.getElementById('verifyAccessCode');
         const accessCodeStatus = document.getElementById('accessCodeStatus');
+        const initializeTestDataBtn = document.getElementById('initializeTestData');
+        
+        // Initialize test access codes for demonstration
+        function initializeTestAccessCodes() {
+            const validCodes = {
+                "A87SDJ5D": {
+                    username: "Test User",
+                    email: "test@example.com",
+                    expiryDate: new Date().getTime() + (366 * 24 * 60 * 60 * 1000), // 366 days from now
+                    status: "active"
+                },
+                "TEST1234": {
+                    username: "Demo Teacher",
+                    email: "teacher@example.com",
+                    expiryDate: new Date().getTime() + (366 * 24 * 60 * 60 * 1000),
+                    status: "active"
+                }
+            };
+            
+            localStorage.setItem('essayEvaluatorValidCodes', JSON.stringify(validCodes));
+            console.log("Test access codes initialized:", validCodes);
+            alert("Test access codes have been initialized. You can now use A87SDJ5D or TEST1234 to access the application.");
+        }
         
         // Check if user already has a valid access code and device ID
         function checkExistingAccess() {
@@ -685,6 +713,7 @@
             
             // Check against valid access codes stored by admin
             const validCodes = JSON.parse(localStorage.getItem('essayEvaluatorValidCodes') || '{}');
+            console.log("Valid codes in storage:", validCodes);
             
             if (validCodes[accessCode]) {
                 const userData = validCodes[accessCode];
@@ -722,6 +751,11 @@
                 showAccessCodeStatus('Invalid access code. Please check and try again.', 'error');
             }
         });
+        
+        // Initialize test data if button is clicked
+        if (initializeTestDataBtn) {
+            initializeTestDataBtn.addEventListener('click', initializeTestAccessCodes);
+        }
         
         // Show access code status
         function showAccessCodeStatus(message, type) {
@@ -1199,6 +1233,12 @@
         // Check for existing valid access on page load
         document.addEventListener('DOMContentLoaded', () => {
             checkExistingAccess();
+            
+            // Initialize test data automatically if no valid codes exist
+            const validCodes = JSON.parse(localStorage.getItem('essayEvaluatorValidCodes') || '{}');
+            if (Object.keys(validCodes).length === 0) {
+                initializeTestAccessCodes();
+            }
         });
     </script>
 </body>
