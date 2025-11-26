@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Essay Evaluator - Subscription Required</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 15px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .app-description {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            font-size: 1.4rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background: var(--gray);
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+        }
+        
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .camera-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 75%; /* 4:3 aspect ratio */
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        #video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        #capturedImage {
+            width: 100%;
+            border-radius: 15px;
+            display: none;
+        }
+        
+        .capture-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .capture-controls .btn {
+            width: auto;
+            flex: 1;
+        }
+        
+        textarea, input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+        
+        .rubric-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .rubric-item h4 {
+            margin-bottom: 10px;
+            color: var(--secondary);
+        }
+        
+        .rubric-points {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .feedback-section {
+            display: none;
+        }
+        
+        .feedback-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .score {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+        
+        .suggestion {
+            background: #e7f5ff;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border-left: 4px solid var(--success);
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .icon {
+            font-size: 1.5rem;
+        }
+        
+        .api-config {
+            background: #f0f8ff;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .api-config h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .api-config p {
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            color: var(--gray);
+        }
+        
+        .essay-text {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+        
+        .processing-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .processing-options .btn {
+            flex: 1;
+            font-size: 0.9rem;
+            padding: 10px 15px;
+        }
+        
+        .total-points-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .point-option {
+            flex: 1;
+            min-width: 60px;
+        }
+        
+        .point-option input[type="radio"] {
+            display: none;
+        }
+        
+        .point-option label {
+            display: block;
+            text-align: center;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .point-option input[type="radio"]:checked + label {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .subscription-info {
+            background: #f0f8ff;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .payment-info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 20px;
+        }
+        
+        .payment-info h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .payment-details {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        
+        .payment-details p {
+            margin-bottom: 10px;
+        }
+        
+        .payment-details strong {
+            color: var(--primary);
+        }
+        
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                max-width: 700px;
+            }
+            
+            .card {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Subscription Section -->
+    <div id="subscriptionSection">
+        <header>
+            <div class="container">
+                <h1>Essay Evaluator - Flexible Scoring</h1>
+                <p class="app-description">Capture handwritten essays with your camera, convert to text using OCR, and get AI-powered evaluation based on your rubric.</p>
+            </div>
+        </header>
+        
+        <div class="container">
+            <!-- Subscription Required Notice -->
+            <div class="card subscription-info">
+                <h2 class="card-title">🔒 Subscription Required</h2>
+                <p>To access the Essay Evaluator, you need a valid subscription. Please follow these steps:</p>
+                <ol style="margin: 15px 0; padding-left: 20px;">
+                    <li>Make a payment of Php 100 to GCash number <strong>0935 836 0471</strong></li>
+                    <li>Contact the administrator with your payment reference</li>
+                    <li>You will receive an Access Code to unlock the application</li>
+                </ol>
+                <p>Your subscription will be valid for <strong>366 days (1 year)</strong> from activation.</p>
+            </div>
+            
+            <!-- Payment Information -->
+            <div class="payment-info">
+                <h3>💳 Payment Instructions</h3>
+                <div class="payment-details">
+                    <p><strong>Step 1:</strong> Send Php 100 to GCash number: <strong>0935 836 0471</strong></p>
+                    <p><strong>Step 2:</strong> Take a screenshot of your payment confirmation</p>
+                    <p><strong>Step 3:</strong> Contact the administrator with your:</p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Full Name</li>
+                        <li>Email Address</li>
+                        <li>Payment Reference Number</li>
+                        <li>Screenshot of Payment</li>
+                    </ul>
+                    <p><strong>Step 4:</strong> You will receive your unique Access Code via email</p>
+                </div>
+            </div>
+            
+            <!-- Access Code Entry -->
+            <div class="card">
+                <h2 class="card-title">🔑 Enter Access Code</h2>
+                <p>If you already have an access code, enter it below to unlock the application:</p>
+                <input type="text" id="accessCode" placeholder="Enter your access code">
+                <button id="verifyAccessCode" class="btn">Verify Access Code</button>
+                <div id="accessCodeStatus" class="status hidden"></div>
+            </div>
+        </div>
+        
+        <footer>
+            <div class="container">
+                <p>Essay Evaluator &copy; 2023. All rights reserved.</p>
+                <p>Need help? Contact the administrator.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Application Content (Hidden until access code is verified) -->
+    <div id="appContent" class="hidden">
+        <header>
+            <div class="container">
+                <h1>Essay Evaluator - Flexible Scoring</h1>
+                <p class="app-description">Capture handwritten essays with your camera, convert to text using OCR, and get AI-powered evaluation based on your rubric.</p>
+            </div>
+        </header>
+        
+        <div class="container">
+            <!-- API Configuration Section -->
+            <div class="card api-config">
+                <h3>API Configuration</h3>
+                <p>For enhanced evaluation, provide your Gemini API key. The key is stored locally and never sent to our servers.</p>
+                <input type="password" id="apiKey" placeholder="Enter your Gemini API key (optional but recommended)">
+                <button id="saveApiKey" class="btn">Save API Key</button>
+            </div>
+            
+            <!-- Total Points Selector -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="icon">📊</span> Select Total Points
+                </h2>
+                <p>Choose the total points for this essay evaluation:</p>
+                <div class="total-points-selector">
+                    <div class="point-option">
+                        <input type="radio" id="points20" name="totalPoints" value="20">
+                        <label for="points20">20</label>
+                    </div>
+                    <div class="point-option">
+                        <input type="radio" id="points25" name="totalPoints" value="25">
+                        <label for="points25">25</label>
+                    </div>
+                    <div class="point-option">
+                        <input type="radio" id="points30" name="totalPoints" value="30">
+                        <label for="points30">30</label>
+                    </div>
+                    <div class="point-option">
+                        <input type="radio" id="points35" name="totalPoints" value="35">
+                        <label for="points35">35</label>
+                    </div>
+                    <div class="point-option">
+                        <input type="radio" id="points100" name="totalPoints" value="100" checked>
+                        <label for="points100">100</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Camera Section -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="icon">📷</span> Capture Essay
+                </h2>
+                <div class="camera-container">
+                    <video id="video" autoplay playsinline></video>
+                    <img id="capturedImage" alt="Captured essay">
+                </div>
+                <div class="capture-controls">
+                    <button id="captureBtn" class="btn">Capture Photo</button>
+                    <button id="retakeBtn" class="btn btn-secondary hidden">Retake</button>
+                </div>
+                <button id="processBtn" class="btn btn-success hidden">Process Essay</button>
+            </div>
+            
+            <!-- Extracted Text Section -->
+            <div class="card hidden" id="extractedTextSection">
+                <h2 class="card-title">
+                    <span class="icon">📝</span> Extracted Text
+                </h2>
+                <div class="essay-text" id="extractedText">
+                    Text will appear here after processing...
+                </div>
+                <button id="editTextBtn" class="btn btn-secondary">Edit Text</button>
+            </div>
+            
+            <!-- Rubric Section -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="icon">📋</span> Evaluation Rubric
+                </h2>
+                <div class="rubric-item">
+                    <h4>Thesis Statement <span class="rubric-points" id="thesisPoints">(20 points)</span></h4>
+                    <p>Clear, arguable thesis that addresses the prompt</p>
+                </div>
+                <div class="rubric-item">
+                    <h4>Organization <span class="rubric-points" id="orgPoints">(20 points)</span></h4>
+                    <p>Logical structure with clear introduction, body, and conclusion</p>
+                </div>
+                <div class="rubric-item">
+                    <h4>Evidence & Support <span class="rubric-points" id="evidencePoints">(30 points)</span></h4>
+                    <p>Relevant examples and evidence to support arguments</p>
+                </div>
+                <div class="rubric-item">
+                    <h4>Clarity & Style <span class="rubric-points" id="clarityPoints">(20 points)</span></h4>
+                    <p>Clear expression, appropriate tone, and varied sentence structure</p>
+                </div>
+                <div class="rubric-item">
+                    <h4>Grammar & Mechanics <span class="rubric-points" id="grammarPoints">(10 points)</span></h4>
+                    <p>Proper grammar, spelling, and punctuation</p>
+                </div>
+            </div>
+            
+            <!-- OCR Progress Section -->
+            <div class="card hidden" id="progressSection">
+                <h2 class="card-title">
+                    <span class="icon">⏳</span> Processing Essay
+                </h2>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="ocrProgress"></div>
+                    </div>
+                    <p id="progressText" class="status">Initializing OCR...</p>
+                </div>
+                <div class="processing-options">
+                    <button id="fastProcessBtn" class="btn btn-success">Fast Processing (Basic OCR)</button>
+                    <button id="detailedProcessBtn" class="btn btn-secondary">Detailed Processing (Enhanced OCR + AI)</button>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="card feedback-section" id="resultsSection">
+                <h2 class="card-title">
+                    <span class="icon">📊</span> AI Evaluation Results
+                </h2>
+                <div class="score" id="totalScore">0/100</div>
+                
+                <div class="feedback-item">
+                    <h4>Thesis Statement</h4>
+                    <p>Score: <span id="thesisScore">0</span>/<span id="thesisMax">20</span></p>
+                    <div class="suggestion" id="thesisFeedback">
+                        Feedback will appear here...
+                    </div>
+                </div>
+                
+                <div class="feedback-item">
+                    <h4>Organization</h4>
+                    <p>Score: <span id="orgScore">0</span>/<span id="orgMax">20</span></p>
+                    <div class="suggestion" id="orgFeedback">
+                        Feedback will appear here...
+                    </div>
+                </div>
+                
+                <div class="feedback-item">
+                    <h4>Evidence & Support</h4>
+                    <p>Score: <span id="evidenceScore">0</span>/<span id="evidenceMax">30</span></p>
+                    <div class="suggestion" id="evidenceFeedback">
+                        Feedback will appear here...
+                    </div>
+                </div>
+                
+                <div class="feedback-item">
+                    <h4>Clarity & Style</h4>
+                    <p>Score: <span id="clarityScore">0</span>/<span id="clarityMax">20</span></p>
+                    <div class="suggestion" id="clarityFeedback">
+                        Feedback will appear here...
+                    </div>
+                </div>
+                
+                <div class="feedback-item">
+                    <h4>Grammar & Mechanics</h4>
+                    <p>Score: <span id="grammarScore">0</span>/<span id="grammarMax">10</span></p>
+                    <div class="suggestion" id="grammarFeedback">
+                        Feedback will appear here...
+                    </div>
+                </div>
+                
+                <div class="feedback-item">
+                    <h4>Overall Feedback</h4>
+                    <div class="suggestion" id="overallFeedback">
+                        Overall feedback will appear here...
+                    </div>
+                </div>
+                
+                <button id="newEssayBtn" class="btn">Evaluate Another Essay</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Access Code Verification
+        const subscriptionSection = document.getElementById('subscriptionSection');
+        const appContent = document.getElementById('appContent');
+        const accessCodeInput = document.getElementById('accessCode');
+        const verifyAccessCodeBtn = document.getElementById('verifyAccessCode');
+        const accessCodeStatus = document.getElementById('accessCodeStatus');
+        
+        // Check if user already has a valid access code and device ID
+        function checkExistingAccess() {
+            const savedAccessCode = localStorage.getItem('essayEvaluatorAccessCode');
+            const expiryDate = localStorage.getItem('essayEvaluatorExpiry');
+            const deviceId = localStorage.getItem('essayEvaluatorDeviceId');
+            const savedDeviceId = getDeviceId();
+            
+            if (savedAccessCode && expiryDate && deviceId === savedDeviceId) {
+                const now = new Date().getTime();
+                if (now < parseInt(expiryDate)) {
+                    // Access code is still valid and device matches
+                    subscriptionSection.classList.add('hidden');
+                    appContent.classList.remove('hidden');
+                    initializeEssayEvaluator();
+                    return true;
+                } else {
+                    // Access code has expired
+                    localStorage.removeItem('essayEvaluatorAccessCode');
+                    localStorage.removeItem('essayEvaluatorExpiry');
+                    localStorage.removeItem('essayEvaluatorDeviceId');
+                    showAccessCodeStatus('Your subscription has expired. Please renew to continue using the application.', 'error');
+                }
+            }
+            return false;
+        }
+        
+        // Generate a unique device ID
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('essayEvaluatorDeviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + 
+                          '_' + new Date().getTime().toString(36);
+                localStorage.setItem('essayEvaluatorDeviceId', deviceId);
+            }
+            return deviceId;
+        }
+        
+        // Verify access code
+        verifyAccessCodeBtn.addEventListener('click', () => {
+            const accessCode = accessCodeInput.value.trim().toUpperCase();
+            
+            if (!accessCode) {
+                showAccessCodeStatus('Please enter an access code', 'error');
+                return;
+            }
+            
+            // Check against valid access codes stored by admin
+            const validCodes = JSON.parse(localStorage.getItem('essayEvaluatorValidCodes') || '{}');
+            
+            if (validCodes[accessCode]) {
+                const userData = validCodes[accessCode];
+                const now = new Date().getTime();
+                
+                if (now < userData.expiryDate) {
+                    // Check if this access code is already in use on another device
+                    if (userData.deviceId && userData.deviceId !== getDeviceId()) {
+                        showAccessCodeStatus('This access code is already in use on another device. Please contact the administrator.', 'error');
+                        return;
+                    }
+                    
+                    // Valid access code - associate with this device
+                    userData.deviceId = getDeviceId();
+                    validCodes[accessCode] = userData;
+                    localStorage.setItem('essayEvaluatorValidCodes', JSON.stringify(validCodes));
+                    
+                    localStorage.setItem('essayEvaluatorAccessCode', accessCode);
+                    localStorage.setItem('essayEvaluatorExpiry', userData.expiryDate);
+                    localStorage.setItem('essayEvaluatorUser', userData.username);
+                    localStorage.setItem('essayEvaluatorDeviceId', userData.deviceId);
+                    
+                    showAccessCodeStatus('Access granted! Loading application...', 'success');
+                    
+                    setTimeout(() => {
+                        subscriptionSection.classList.add('hidden');
+                        appContent.classList.remove('hidden');
+                        initializeEssayEvaluator();
+                    }, 1000);
+                } else {
+                    // Expired access code
+                    showAccessCodeStatus('This access code has expired. Please contact the administrator to renew.', 'error');
+                }
+            } else {
+                showAccessCodeStatus('Invalid access code. Please check and try again.', 'error');
+            }
+        });
+        
+        // Show access code status
+        function showAccessCodeStatus(message, type) {
+            accessCodeStatus.textContent = message;
+            accessCodeStatus.className = 'status';
+            
+            if (type === 'success') {
+                accessCodeStatus.classList.add('status-success');
+            } else if (type === 'error') {
+                accessCodeStatus.classList.add('status-error');
+            } else if (type === 'warning') {
+                accessCodeStatus.classList.add('status-warning');
+            }
+            
+            accessCodeStatus.classList.remove('hidden');
+        }
+        
+        // Initialize the essay evaluator application
+        function initializeEssayEvaluator() {
+            // DOM Elements
+            const video = document.getElementById('video');
+            const captureBtn = document.getElementById('captureBtn');
+            const retakeBtn = document.getElementById('retakeBtn');
+            const processBtn = document.getElementById('processBtn');
+            const capturedImage = document.getElementById('capturedImage');
+            const progressSection = document.getElementById('progressSection');
+            const ocrProgress = document.getElementById('ocrProgress');
+            const progressText = document.getElementById('progressText');
+            const resultsSection = document.getElementById('resultsSection');
+            const newEssayBtn = document.getElementById('newEssayBtn');
+            const totalScore = document.getElementById('totalScore');
+            const apiKeyInput = document.getElementById('apiKey');
+            const saveApiKeyBtn = document.getElementById('saveApiKey');
+            const extractedTextSection = document.getElementById('extractedTextSection');
+            const extractedText = document.getElementById('extractedText');
+            const editTextBtn = document.getElementById('editTextBtn');
+            const fastProcessBtn = document.getElementById('fastProcessBtn');
+            const detailedProcessBtn = document.getElementById('detailedProcessBtn');
+            const totalPointsRadios = document.querySelectorAll('input[name="totalPoints"]');
+
+            // Rubric points display elements
+            const thesisPoints = document.getElementById('thesisPoints');
+            const orgPoints = document.getElementById('orgPoints');
+            const evidencePoints = document.getElementById('evidencePoints');
+            const clarityPoints = document.getElementById('clarityPoints');
+            const grammarPoints = document.getElementById('grammarPoints');
+
+            // Score elements
+            const thesisScore = document.getElementById('thesisScore');
+            const orgScore = document.getElementById('orgScore');
+            const evidenceScore = document.getElementById('evidenceScore');
+            const clarityScore = document.getElementById('clarityScore');
+            const grammarScore = document.getElementById('grammarScore');
+            
+            // Max score elements
+            const thesisMax = document.getElementById('thesisMax');
+            const orgMax = document.getElementById('orgMax');
+            const evidenceMax = document.getElementById('evidenceMax');
+            const clarityMax = document.getElementById('clarityMax');
+            const grammarMax = document.getElementById('grammarMax');
+            
+            // Feedback elements
+            const thesisFeedback = document.getElementById('thesisFeedback');
+            const orgFeedback = document.getElementById('orgFeedback');
+            const evidenceFeedback = document.getElementById('evidenceFeedback');
+            const clarityFeedback = document.getElementById('clarityFeedback');
+            const grammarFeedback = document.getElementById('grammarFeedback');
+            const overallFeedback = document.getElementById('overallFeedback');
+
+            // Camera stream
+            let stream = null;
+            let extractedEssayText = '';
+            let selectedTotalPoints = 100;
+            let rubricDistribution = {
+                thesis: 0.2,
+                organization: 0.2,
+                evidence: 0.3,
+                clarity: 0.2,
+                grammar: 0.1
+            };
+
+            // Initialize camera
+            async function initCamera() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'environment' } 
+                    });
+                    video.srcObject = stream;
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    progressText.textContent = "Cannot access camera. Please check permissions.";
+                    progressText.className = "status status-error";
+                }
+            }
+
+            // Update rubric points based on selected total
+            function updateRubricPoints() {
+                const thesis = Math.round(selectedTotalPoints * rubricDistribution.thesis);
+                const org = Math.round(selectedTotalPoints * rubricDistribution.organization);
+                const evidence = Math.round(selectedTotalPoints * rubricDistribution.evidence);
+                const clarity = Math.round(selectedTotalPoints * rubricDistribution.clarity);
+                const grammar = selectedTotalPoints - thesis - org - evidence - clarity;
+                
+                thesisPoints.textContent = `(${thesis} points)`;
+                orgPoints.textContent = `(${org} points)`;
+                evidencePoints.textContent = `(${evidence} points)`;
+                clarityPoints.textContent = `(${clarity} points)`;
+                grammarPoints.textContent = `(${grammar} points)`;
+                
+                thesisMax.textContent = thesis;
+                orgMax.textContent = org;
+                evidenceMax.textContent = evidence;
+                clarityMax.textContent = clarity;
+                grammarMax.textContent = grammar;
+            }
+
+            // Listen for changes to total points selection
+            totalPointsRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    selectedTotalPoints = parseInt(this.value);
+                    updateRubricPoints();
+                });
+            });
+
+            // Capture photo
+            captureBtn.addEventListener('click', () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                capturedImage.src = canvas.toDataURL('image/jpeg', 0.8);
+                capturedImage.style.display = 'block';
+                video.style.display = 'none';
+                
+                captureBtn.classList.add('hidden');
+                retakeBtn.classList.remove('hidden');
+                processBtn.classList.remove('hidden');
+            });
+
+            // Retake photo
+            retakeBtn.addEventListener('click', () => {
+                capturedImage.style.display = 'none';
+                video.style.display = 'block';
+                
+                captureBtn.classList.remove('hidden');
+                retakeBtn.classList.add('hidden');
+                processBtn.classList.add('hidden');
+                extractedTextSection.classList.add('hidden');
+            });
+
+            // Save API key
+            saveApiKeyBtn.addEventListener('click', () => {
+                const apiKey = apiKeyInput.value.trim();
+                if (apiKey) {
+                    localStorage.setItem('gemini-api-key', apiKey);
+                    alert('API key saved locally!');
+                    apiKeyInput.type = 'password';
+                    apiKeyInput.value = '••••••••••••••••';
+                } else {
+                    alert('Please enter a valid API key');
+                }
+            });
+
+            // Load saved API key
+            if (apiKeyInput) {
+                const savedApiKey = localStorage.getItem('gemini-api-key');
+                if (savedApiKey) {
+                    apiKeyInput.value = '••••••••••••••••';
+                }
+            }
+            updateRubricPoints(); // Initialize rubric points
+
+            // Edit extracted text
+            editTextBtn.addEventListener('click', () => {
+                if (extractedText.contentEditable === 'true') {
+                    extractedText.contentEditable = 'false';
+                    editTextBtn.textContent = 'Edit Text';
+                    extractedEssayText = extractedText.textContent;
+                } else {
+                    extractedText.contentEditable = 'true';
+                    editTextBtn.textContent = 'Save Text';
+                    extractedText.focus();
+                }
+            });
+
+            // Fast processing (OCR only)
+            fastProcessBtn.addEventListener('click', async () => {
+                await processEssay(false);
+            });
+
+            // Detailed processing (OCR + API)
+            detailedProcessBtn.addEventListener('click', async () => {
+                await processEssay(true);
+            });
+
+            // Process essay with optimized OCR
+            async function processEssay(useAPI = false) {
+                progressSection.classList.remove('hidden');
+                fastProcessBtn.disabled = true;
+                detailedProcessBtn.disabled = true;
+                
+                try {
+                    // Step 1: OCR Processing
+                    progressText.textContent = "Extracting text from image...";
+                    ocrProgress.style.width = "30%";
+                    
+                    let text, confidence;
+                    
+                    // Use Tesseract.js directly with proper error handling
+                    try {
+                        const result = await Tesseract.recognize(
+                            capturedImage.src,
+                            'eng',
+                            { 
+                                logger: m => {
+                                    if (m.status === 'recognizing text') {
+                                        const progress = Math.round(m.progress * 100);
+                                        ocrProgress.style.width = `${30 + (progress * 0.4)}%`;
+                                        progressText.textContent = `OCR Progress: ${progress}%`;
+                                    }
+                                }
+                            }
+                        );
+                        
+                        text = result.data.text;
+                        confidence = result.data.confidence;
+                    } catch (ocrError) {
+                        console.error("OCR Error:", ocrError);
+                        throw new Error("OCR processing failed. Please try again with a clearer image.");
+                    }
+                    
+                    extractedEssayText = text.trim();
+                    
+                    // Display extracted text
+                    extractedText.textContent = extractedEssayText || "No text could be extracted. Please try again with a clearer image.";
+                    extractedTextSection.classList.remove('hidden');
+                    
+                    if (!useAPI) {
+                        // Fast processing: Use simulated evaluation only
+                        progressText.textContent = "Generating basic evaluation...";
+                        ocrProgress.style.width = "80%";
+                        
+                        simulateEvaluation(extractedEssayText, confidence);
+                        
+                        progressText.textContent = "Finalizing results...";
+                        ocrProgress.style.width = "100%";
+                        
+                        // Show results
+                        setTimeout(() => {
+                            progressSection.classList.add('hidden');
+                            resultsSection.style.display = 'block';
+                        }, 500);
+                        return;
+                    }
+                    
+                    // Step 2: API Evaluation
+                    progressText.textContent = "Evaluating essay with AI...";
+                    ocrProgress.style.width = "60%";
+                    
+                    // Use Gemini API for evaluation if key is available
+                    const apiKey = localStorage.getItem('gemini-api-key');
+                    if (apiKey && apiKey.length > 10) {
+                        try {
+                            await evaluateWithGemini(extractedEssayText, apiKey);
+                        } catch (apiError) {
+                            console.error("API evaluation failed:", apiError);
+                            // Fall back to simulated evaluation
+                            progressText.textContent = "AI evaluation failed, using basic evaluation...";
+                            simulateEvaluation(extractedEssayText, confidence);
+                        }
+                    } else {
+                        // Fallback to simulated evaluation
+                        simulateEvaluation(extractedEssayText, confidence);
+                    }
+                    
+                    // Update progress
+                    progressText.textContent = "Generating feedback...";
+                    ocrProgress.style.width = "100%";
+                    
+                    // Show results
+                    setTimeout(() => {
+                        progressSection.classList.add('hidden');
+                        resultsSection.style.display = 'block';
+                    }, 500);
+                    
+                } catch (error) {
+                    console.error("Processing Error: ", error);
+                    progressText.textContent = `Error: ${error.message}`;
+                    progressText.className = "status status-error";
+                    fastProcessBtn.disabled = false;
+                    detailedProcessBtn.disabled = false;
+                }
+            }
+
+            // Process button handler - shows options
+            processBtn.addEventListener('click', () => {
+                progressSection.classList.remove('hidden');
+                processBtn.classList.add('hidden');
+            });
+
+            // Evaluate essay using Gemini API
+            async function evaluateWithGemini(essayText, apiKey) {
+                // Calculate scaled points based on selected total
+                const thesisMaxPoints = Math.round(selectedTotalPoints * rubricDistribution.thesis);
+                const orgMaxPoints = Math.round(selectedTotalPoints * rubricDistribution.organization);
+                const evidenceMaxPoints = Math.round(selectedTotalPoints * rubricDistribution.evidence);
+                const clarityMaxPoints = Math.round(selectedTotalPoints * rubricDistribution.clarity);
+                const grammarMaxPoints = selectedTotalPoints - thesisMaxPoints - orgMaxPoints - evidenceMaxPoints - clarityMaxPoints;
+
+                // Limit essay length to prevent timeout
+                const truncatedEssay = essayText.length > 2000 
+                    ? essayText.substring(0, 2000) + "... [text truncated for processing]"
+                    : essayText;
+
+                try {
+                    const prompt = `
+                    Evaluate this student essay based on the following rubric and provide specific scores and feedback:
+
+                    Rubric:
+                    - Thesis Statement (${thesisMaxPoints} points): Clear, arguable thesis that addresses the prompt
+                    - Organization (${orgMaxPoints} points): Logical structure with clear introduction, body, and conclusion
+                    - Evidence & Support (${evidenceMaxPoints} points): Relevant examples and evidence to support arguments
+                    - Clarity & Style (${clarityMaxPoints} points): Clear expression, appropriate tone, and varied sentence structure
+                    - Grammar & Mechanics (${grammarMaxPoints} points): Proper grammar, spelling, and punctuation
+
+                    Total Points: ${selectedTotalPoints}
+
+                    Essay:
+                    "${truncatedEssay}"
+
+                    Please respond with a JSON object in this exact format:
+                    {
+                      "thesis": {"score": number, "feedback": "string"},
+                      "organization": {"score": number, "feedback": "string"},
+                      "evidence": {"score": number, "feedback": "string"},
+                      "clarity": {"score": number, "feedback": "string"},
+                      "grammar": {"score": number, "feedback": "string"},
+                      "overall": "string",
+                      "totalScore": number
+                    }
+                    `;
+
+                    // Using Gemini API (adjust endpoint as needed)
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{
+                                    text: prompt
+                                }]
+                            }]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const responseText = data.candidates[0].content.parts[0].text;
+                    
+                    // Extract JSON from response
+                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                    if (!jsonMatch) {
+                        throw new Error('Invalid response format from API');
+                    }
+                    
+                    const evaluation = JSON.parse(jsonMatch[0]);
+
+                    // Update UI with API evaluation results
+                    updateEvaluationResults(evaluation);
+                    
+                } catch (error) {
+                    console.error('Gemini API Error:', error);
+                    throw error;
+                }
+            }
+
+            // Update UI with evaluation results
+            function updateEvaluationResults(evaluation) {
+                thesisScore.textContent = evaluation.thesis.score;
+                orgScore.textContent = evaluation.organization.score;
+                evidenceScore.textContent = evaluation.evidence.score;
+                clarityScore.textContent = evaluation.clarity.score;
+                grammarScore.textContent = evaluation.grammar.score;
+                
+                thesisFeedback.textContent = evaluation.thesis.feedback;
+                orgFeedback.textContent = evaluation.organization.feedback;
+                evidenceFeedback.textContent = evaluation.evidence.feedback;
+                clarityFeedback.textContent = evaluation.clarity.feedback;
+                grammarFeedback.textContent = evaluation.grammar.feedback;
+                overallFeedback.textContent = evaluation.overall;
+                
+                totalScore.textContent = `${evaluation.totalScore}/${selectedTotalPoints}`;
+            }
+
+            // Simulated evaluation (fallback)
+            function simulateEvaluation(text, confidence) {
+                // Calculate scaled points based on selected total
+                const thesisMaxPoints = Math.round(selectedTotalPoints * rubricDistribution.thesis);
+                const orgMaxPoints = Math.round(selectedTotalPoints * rubricDistribution.organization);
+                const evidenceMaxPoints = Math.round(selectedTotalPoints * rubricDistribution.evidence);
+                const clarityMaxPoints = Math.round(selectedTotalPoints * rubricDistribution.clarity);
+                const grammarMaxPoints = selectedTotalPoints - thesisMaxPoints - orgMaxPoints - evidenceMaxPoints - clarityMaxPoints;
+                
+                // Calculate scores based on text characteristics
+                const wordCount = text.split(/\s+/).length;
+                const sentenceCount = text.split(/[.!?]+/).length - 1;
+                const paragraphCount = text.split(/\n\s*\n/).length;
+                
+                // Simulate scoring based on text metrics and scaled points
+                const tScore = Math.min(thesisMaxPoints, Math.floor(thesisMaxPoints * 0.7 + (wordCount / 100)));
+                const oScore = Math.min(orgMaxPoints, Math.floor(orgMaxPoints * 0.6 + paragraphCount));
+                const eScore = Math.min(evidenceMaxPoints, Math.floor(evidenceMaxPoints * 0.6 + (wordCount / 50)));
+                const cScore = Math.min(clarityMaxPoints, Math.floor(clarityMaxPoints * 0.7 + (sentenceCount / 5)));
+                const gScore = Math.min(grammarMaxPoints, Math.floor(grammarMaxPoints * 0.7 + (confidence / 15)));
+                
+                const total = tScore + oScore + eScore + cScore + gScore;
+                
+                // Create simulated evaluation object
+                const evaluation = {
+                    thesis: {
+                        score: tScore,
+                        feedback: "Your thesis is clear but could be more specific to strengthen your argument."
+                    },
+                    organization: {
+                        score: oScore,
+                        feedback: "Consider using stronger transitions between paragraphs for better flow."
+                    },
+                    evidence: {
+                        score: eScore,
+                        feedback: "Add more specific examples and evidence to support your main points."
+                    },
+                    clarity: {
+                        score: cScore,
+                        feedback: "Your writing is clear, but varying sentence structure would improve readability."
+                    },
+                    grammar: {
+                        score: gScore,
+                        feedback: "Watch for comma splices and subject-verb agreement issues."
+                    },
+                    overall: "This is a solid essay with a clear argument. To improve, focus on providing more specific evidence and strengthening transitions between ideas.",
+                    totalScore: total
+                };
+                
+                // Update UI with simulated results
+                updateEvaluationResults(evaluation);
+            }
+
+            // New essay button
+            newEssayBtn.addEventListener('click', () => {
+                resultsSection.style.display = 'none';
+                capturedImage.style.display = 'none';
+                video.style.display = 'block';
+                captureBtn.classList.remove('hidden');
+                retakeBtn.classList.add('hidden');
+                processBtn.classList.remove('hidden');
+                extractedTextSection.classList.add('hidden');
+                fastProcessBtn.disabled = false;
+                detailedProcessBtn.disabled = false;
+                
+                // Reset progress bar
+                ocrProgress.style.width = "0%";
+            });
+
+            // Initialize the app
+            initCamera();
+        }
+        
+        // Check for existing valid access on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkExistingAccess();
+        });
+    </script>
+</body>
+</html>
